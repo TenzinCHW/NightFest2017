@@ -13,5 +13,7 @@ Pictures to be added later.
 
 ## Libraries
 [Simple Timer](https://playground.arduino.cc/Code/SimpleTimer)
+
 [Simple ZigBee](https://github.com/ericburger/simple-zigbee)
+
 [FastLED](https://github.com/FastLED/FastLED)
