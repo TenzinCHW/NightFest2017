@@ -1,7 +1,7 @@
 # NightFest2017
 Code for the Tessellation of Time project for Singapore Night Fest 2017.
 
-===========================
+---
 ## Hardware
 XBee S2 Pro, broadcast mode (DH = 0x0, DL = 0xffff), default settings
 Arduino Mega 2560
@@ -12,6 +12,6 @@ Jumper sleeves were removed.
 Pictures to be added later.
 
 ## Libraries
-[Simple Timer] (https://playground.arduino.cc/Code/SimpleTimer)
-[Simple ZigBee] (https://github.com/ericburger/simple-zigbee)
-[FastLED] (https://github.com/FastLED/FastLED)
+[Simple Timer](https://playground.arduino.cc/Code/SimpleTimer)
+[Simple ZigBee](https://github.com/ericburger/simple-zigbee)
+[FastLED](https://github.com/FastLED/FastLED)
