@@ -59,6 +59,8 @@ void loop() {
   delay(1000);
 }
 
+
+
 void send_status(uint8_t stat) {
   data[POD - 1] = stat;
   for (int i = 0; i < 10; i++) {

@@ -14,6 +14,7 @@ int val = 0;
 // Variables to store time
 unsigned long time = 0;
 unsigned long last_sent = 0;
+int addresses[] = {0x41270684, 0x41558EC9, 0x412706A0};
 
 void setup() {
   // Start the serial ports ...
@@ -34,9 +35,21 @@ void setup() {
 }
 
 void loop() {
-  printPacket(zbp);
-  xbee.send(zbp);
+  sendToAll();
+//  printPacket(zbp);
+//  xbee.send(zbp);
   delay(1000);
+}
+
+void sendToAll() {
+  for (int i = 0; i < 3; i++) {
+    xbee.prepareATCommand('DL', addresses[i]);
+    xbee.send();
+    delay(10);
+    xbee.send(zbp);
+    printPacket(zbp);
+    delay(1000);
+  }
 }
 
 void printPacket(SimpleZigBeePacket & p) {
