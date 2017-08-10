@@ -43,8 +43,6 @@
   void setup() {
     // Start the serial ports ...
     Serial.begin( 9600 );
-    while( !Serial ){;// Wait for serial port (for Leonardo only). 
-    }
     Serial1.begin( 9600 );
     // ... and set the serial port for the XBee radio.
     xbee.setSerial( Serial1 );
@@ -62,7 +60,7 @@
     uint8_t panID[] = {0x12,0x34}; // Max: 64-bit
     xbee.prepareATCommand('ID',panID,sizeof(panID));
     xbee.send();    
-    
+    Serial.println("Started");
   }
   
   
