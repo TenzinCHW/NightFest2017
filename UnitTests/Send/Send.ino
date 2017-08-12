@@ -14,7 +14,8 @@ int val = 0;
 // Variables to store time
 unsigned long time = 0;
 unsigned long last_sent = 0;
-int POD = 10;
+uint8_t POD = 10;
+uint8_t state[] = {0, 0, 0};
 
 void setup() {
   // Start the serial ports ...

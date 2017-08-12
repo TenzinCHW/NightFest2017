@@ -54,12 +54,12 @@
     // AT Commands AP and ID. Note: These changes will
     // be stored in volatile memory and will not persist
     // if power is lost.
+    uint8_t panID[] = {0x12,0x34}; // Max: 64-bit
+    xbee.prepareATCommand('ID',panID,sizeof(panID));
+    xbee.send();
     xbee.prepareATCommand('AP',2);
     xbee.send();
     delay(200);
-    uint8_t panID[] = {0x12,0x34}; // Max: 64-bit
-    xbee.prepareATCommand('ID',panID,sizeof(panID));
-    xbee.send();    
     Serial.println("Started");
   }
   
