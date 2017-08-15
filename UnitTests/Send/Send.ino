@@ -1,21 +1,15 @@
 #include <SimpleZigBeeRadio.h>
-//#include <SoftwareSerial.h>
 // Create the XBee object ...
 SimpleZigBeeRadio xbee = SimpleZigBeeRadio();
-// ... and the software serial port. Note: Only one
-// SoftwareSerial object can receive data at a time.
-//SoftwareSerial xbeeSerial(2, 3); // (RX=>DOUT, TX=>DIN)
-// Packet to send: In this example, we will update
-// the contents of a packet before sending it.
-SimpleZigBeePacket zbp = SimpleZigBeePacket();
 
 // Value and payload to be sent
 int val = 0;
 // Variables to store time
 unsigned long time = 0;
 unsigned long last_sent = 0;
-uint8_t POD = 10;
+uint8_t POD = 1;
 uint8_t state[] = {0, 0, 0};
+uint8_t seq_group[] = {0, 0, 0, 0, 0};   // records data for every 3 entries - each entry takes 4 bits (possible values 1-9). Only master needs to change this
 
 void setup() {
   // Start the serial ports ...
@@ -29,13 +23,11 @@ void setup() {
   xbee.setAcknowledgement(true);
   // The frame data in a ZigBee packet refers to the data between
   // the length LSB and the checksum.
-  uint8_t exFrame[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
   // Now store the example frame in the packet object.
-  zbp.setFrameData(0, exFrame, sizeof(exFrame));
   Serial.println("Ready to send");
 }
 
-uint8_t data[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+uint8_t data;
 char m;
 
 void loop() {
@@ -52,22 +44,18 @@ void loop() {
       case 'k': POD = 8; break;
       case 'l': POD = 9; break;
       case ';': POD = 10; break;
-      case '1': send_status(0); printPacket(zbp); break;
-      case '2': send_status(1); printPacket(zbp); break;
+      case 'z': set_occupied(true); break;
+      case 'x': set_occupied(false); break;
+      case 'c': set_ready(); break;
+      case 'v': reset_ready(POD); break;
+      case '1': data = prepare_msg(false); send_update(data); break;
+      case '2': data = prepare_msg(true); send_update(data); break;
+      case '3': ; break;
       default: continue;
     }
   }
+  printPacket(xbee.getOutgoingPacketObject());
   delay(1000);
-}
-
-
-
-void send_status(uint8_t stat) {
-  data[POD - 1] = stat;
-  for (int i = 0; i < 10; i++) {
-    zbp.setFrameData(i, data[i]);
-  }
-  xbee.send(zbp);
 }
 
 void printPacket(SimpleZigBeePacket & p) {
@@ -88,4 +76,94 @@ void printPacket(SimpleZigBeePacket & p) {
   checksum = 0xff - checksum;
   Serial.print(checksum, HEX );
   Serial.println();
+}
+
+uint8_t prepare_msg(bool go) {  // returns the byte message to send for a "status update"
+  uint8_t msg = POD << 4;  // byte msg format: first 4 MSB is pod number, 5th MSB is flag to indicate msg is master's sequence assignment - interpret whole msg differently
+  // 6th MSB is flag for "go" signal when all pods are ready to enter all_occupied funciton, 7th MSB is flag to indicate that pod sending the msg is ready
+  // LSB (8th MSB) is flag to indicate whether pod sending the msg is occupied
+  if (go) msg |= 0x04;
+  if (is_ready(POD)) msg |= 0x02;
+  if (occupied(POD)) msg |= 0x01;
+  return msg;
+}
+
+void send_sequence(uint8_t data) {
+  uint8_t seq = check_set_seq(data);
+  if (data & 0x01) {  // pod which sent this message is now occupied; must assign it to some sequence number from 1 to 3
+    send_update((data & 0b11110000) | (0x08 | seq));   // 0x08 means 4th LSB is 1, and OR with seq_group / 3 + 1 means the first 3 bits will represent the sequence number to play (1 to 3)
+  }
+  // the pod will ownself check that it has finished and go back to default non-occupied state sequence
+}
+
+uint8_t check_set_seq(uint8_t data) {
+  uint8_t pod_or_0 = 0;
+  uint8_t pod_num = data >> 4;
+  if (data & 0x01) pod_or_0 = pod_num;
+  for (size_t i = 0; i < 5; i++) {
+    if (i < 4) {
+      if ((seq_group[i] & 0b00001111) == pod_num) {
+        seq_group[i] |= pod_or_0;
+        if ((i % 3) == 1) return (i * 2 + 1) / 3;
+        else return (i * 2 + 2) / 3;
+      }
+    }
+    if ((seq_group[i] >> 4) == pod_num) {
+      seq_group[i] |= pod_or_0 << 4;
+      if ((i % 3) == 0) return i * 2 / 3;
+      else return (i * 2 + 1) / 3;
+    }
+  }
+}
+
+void set_occupied(bool occ) {
+  uint8_t set = 0;
+  if (occ) set = 1;
+  if (POD > 8) {
+    state[1] |= set << (POD - 9);
+  } else {
+    state[2] |= set << (POD - 1);
+  }
+}
+
+bool occupied(uint8_t pod_num) {
+  if (pod_num > 8) {
+    return state[1] & (0x01 << (POD - 9));
+  }
+  return state[2] & (0x01 << (POD - 1));
+}
+
+void set_ready() {
+  if (POD > 6) {
+    state[0] |= 0x01 << (POD - 7);
+  } else {
+    state[1] |= 0x01 << (POD + 1);
+  }
+}
+
+bool is_ready(uint8_t pod_num) {  // returns true if pod_num pod's "ready" state is 1
+  if (pod_num > 6) {
+    return state[0] & (0x01 << (pod_num - 7));
+  }
+  return state[1] & (0x01 << (pod_num + 1));
+}
+
+void send_update(uint8_t msg) { // cannot join w/ prepare_msg function because must generate special msg for master instructions
+  uint8_t payload[] = {msg};
+  xbee.prepareTXRequestBroadcast(payload, sizeof(payload));
+  xbee.send();
+}
+
+void reset_ready(uint8_t pod_num) {  // sets the pod_num pod "ready" state to 0
+  if (pod_num > 6) {
+    state[0] &= ~(0x01 << (pod_num - 7));
+  } else {
+    state[1] &= ~(0x01 << (pod_num + 1));
+  }
+}
+
+void reset_ready_all() {  // sets all pods' "ready" state to 0
+  for (size_t i = 1; i < 11; i++) {
+    reset_ready(i);
+  }
 }
