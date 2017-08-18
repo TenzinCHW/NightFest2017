@@ -14,11 +14,11 @@ uint8_t seq_group[] = {0, 0, 0, 0, 0};   // records data for every 3 entries - e
 void setup() {
   // Start the serial ports ...
   Serial.begin( 9600 );
-  Serial1.begin(9600);
+  Serial3.begin(9600);
 
   //  xbeeSerial.begin( 9600 );
   // ... and set the serial port for the XBee radio.
-  xbee.setSerial( Serial1 );
+  xbee.setSerial( Serial3 );
   // Receive TX Status packets
   xbee.setAcknowledgement(true);
   // The frame data in a ZigBee packet refers to the data between
@@ -50,11 +50,12 @@ void loop() {
       case 'v': reset_ready(POD); break;
       case '1': data = prepare_msg(false); send_update(data); break;
       case '2': data = prepare_msg(true); send_update(data); break;
-      case '3': ; break;
+      case '3': send_sequence(0x11); Serial.println(0x11,BIN); break;
       default: continue;
     }
   }
-  printPacket(xbee.getOutgoingPacketObject());
+//  printPacket(xbee.getOutgoingPacketObject());
+  Serial.println(data, BIN);
   delay(1000);
 }
 
@@ -97,19 +98,25 @@ void send_sequence(uint8_t data) {
 }
 
 uint8_t check_set_seq(uint8_t data) {
-  uint8_t pod_or_0 = 0;
-  uint8_t pod_num = data >> 4;
-  if (data & 0x01) pod_or_0 = pod_num;
-  for (size_t i = 0; i < 5; i++) {
-    if (i < 4) {
-      if ((seq_group[i] & 0b00001111) == pod_num) {
-        seq_group[i] |= pod_or_0;
+  uint8_t replacewith;
+  uint8_t findval;
+  if (data & 0x01) {
+    findval = 0;
+    replacewith = data >> 4;
+  } else {
+    findval = data >> 4;
+    replacewith = 0;
+  }
+  for (size_t i = 1; i < 6; i++) {
+    if (i < 5) {
+      if ((seq_group[i-1] & 0b00001111) == findval) {
+        seq_group[i-1] |= replacewith;
         if ((i % 3) == 1) return (i * 2 + 1) / 3;
         else return (i * 2 + 2) / 3;
       }
     }
-    if ((seq_group[i] >> 4) == pod_num) {
-      seq_group[i] |= pod_or_0 << 4;
+    if ((seq_group[i-1] >> 4) == findval) {
+      seq_group[i-1] |= replacewith << 4;
       if ((i % 3) == 0) return i * 2 / 3;
       else return (i * 2 + 1) / 3;
     }
@@ -120,9 +127,9 @@ void set_occupied(bool occ) {
   uint8_t set = 0;
   if (occ) set = 1;
   if (POD > 8) {
-    state[1] |= set << (POD - 9);
+    state[1] ^= (-set ^ state[1]) & (1 << (POD - 9));
   } else {
-    state[2] |= set << (POD - 1);
+    state[2] ^= (-set ^ state[2]) & (1 << (POD - 1));
   }
 }
 
@@ -167,3 +174,12 @@ void reset_ready_all() {  // sets all pods' "ready" state to 0
     reset_ready(i);
   }
 }
+
+void print_state() {
+  for (int i = 0; i < 3; i++) {
+    Serial.print(state[i], BIN);
+    Serial.print(' ');
+  }
+  Serial.println();
+}
+

@@ -4,9 +4,9 @@ uint8_t state[] = {0, 0, 0};
 void setup() {
   Serial.begin(9600);
   change_state_test();
-  occupied_test();
-  paired_test();
-  all_occupied_test();
+//  occupied_test();
+//  paired_test();
+//  all_occupied_test();
 }
 
 void loop() {
@@ -45,10 +45,10 @@ void print_state() {
   Serial.println();
 }
 
-void change_state(uint8_t payloadVal) {
-  uint8_t entered_state = (payloadVal & 0x01);
-  uint8_t ready_state = (payloadVal & 0x02 >> 1);
-  uint8_t pod_num = (payloadVal >> 3);
+void change_state(uint8_t data) {
+  uint8_t entered_state = (data & 0x01);
+  uint8_t ready_state = ((data & 0x02) >> 1);
+  uint8_t pod_num = (data >> 4);
   uint8_t pos;
   if (pod_num > 6) {
     pos = pod_num - 7;
