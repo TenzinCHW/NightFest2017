@@ -1,6 +1,7 @@
 #include <SimpleZigBeeRadio.h>
 // Create the XBee object ...
 SimpleZigBeeRadio xbee = SimpleZigBeeRadio();
+SimpleZigBeePacket zbp = SimpleZigBeePacket();
 
 // Value and payload to be sent
 int val = 0;
@@ -157,8 +158,8 @@ bool is_ready(uint8_t pod_num) {  // returns true if pod_num pod's "ready" state
 
 void send_update(uint8_t msg) { // cannot join w/ prepare_msg function because must generate special msg for master instructions
   uint8_t payload[] = {msg};
-  xbee.prepareTXRequestBroadcast(payload, sizeof(payload));
-  xbee.send();
+  zbp.setFrameData(0, payload, sizeof(payload));
+  xbee.send(zbp);
 }
 
 void reset_ready(uint8_t pod_num) {  // sets the pod_num pod "ready" state to 0
