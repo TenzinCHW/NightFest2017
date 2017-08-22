@@ -1,0 +1,8 @@
+POD 6 - master to receive and interpret ALL messages
+record the order of being occupied - every 3 will play the same and must know which of the 3 triple connected they are part of (whether 1, 2 or 3 of the same triple are occupied, they will play the same sequence). 
+
+Once all pods occupied, master to send msg that all should go dark and then break and wait at next loop to play the all occupied function
+
+All other pods will wait for message from master and only do something if there is a message from the master
+
+The all occupied function will call the functions that are used for the other sequences
