@@ -24,9 +24,9 @@ void setup() {
 //  FastLED.addLeds<UCS1903B, 15, RGB>(LEDs, 1710, 190);
   // Start the serial ports ...
   Serial.begin(9600);
-  Serial1.begin( 9600 );
+  Serial3.begin( 9600 );
   // ... and set the serial port for the XBee radio.
-  xbee.setSerial( Serial1 );
+  xbee.setSerial( Serial3 );
   // Set a non-zero frame id to receive Status and Response packets.
   xbee.setAcknowledgement(true);
   pinMode(10, OUTPUT);
@@ -80,7 +80,7 @@ void xbeeRead() {
     // If a complete message is available, display the contents
     if ( xbee.isComplete() ) {
       Serial.print("\nIncoming Message: ");
-      SimpleZigBeePacket m = xbee.getIncomingPacketObject();
+      SimpleIncomingZigBeePacket m = xbee.getIncomingPacketObject();
       printPacket(m);
       //printPacket( xbee.getIncomingPacketObject() );
       if (lastByte(m)) {  // Tx should send a 1 whenever turn on or off

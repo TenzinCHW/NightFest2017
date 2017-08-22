@@ -45,9 +45,9 @@
   void setup() {
     // Start the serial ports ...
     Serial.begin( 9600 );
-    Serial1.begin( 9600 );
+    Serial3.begin( 9600 );
     // ... and set the serial port for the XBee radio.
-    xbee.setSerial( Serial1 );
+    xbee.setSerial( Serial3 );
     // Receive TX Status packets
     xbee.setAcknowledgement(true);
     

@@ -15,11 +15,10 @@ uint8_t seq_group[] = {0, 0, 0, 0, 0};   // records data for every 3 entries - e
 void setup() {
   // Start the serial ports ...
   Serial.begin( 9600 );
-  Serial3.begin(9600);
 
   //  xbeeSerial.begin( 9600 );
   // ... and set the serial port for the XBee radio.
-  xbee.setSerial( Serial3 );
+  xbee.setSerial( Serial );
   // Receive TX Status packets
   xbee.setAcknowledgement(true);
   // The frame data in a ZigBee packet refers to the data between
@@ -32,29 +31,35 @@ uint8_t data;
 char m;
 
 void loop() {
-  while (Serial.available()) {
-    m = Serial.read();
-    switch (m) {
-      case 'a': POD = 1; break;
-      case 's': POD = 2; break;
-      case 'd': POD = 3; break;
-      case 'f': POD = 4; break;
-      case 'g': POD = 5; break;
-      case 'h': POD = 6; break;
-      case 'j': POD = 7; break;
-      case 'k': POD = 8; break;
-      case 'l': POD = 9; break;
-      case ';': POD = 10; break;
-      case 'z': set_occupied(true); break;
-      case 'x': set_occupied(false); break;
-      case 'c': set_ready(); break;
-      case 'v': reset_ready(POD); break;
-      case '1': data = prepare_msg(false); send_update(data); break;
-      case '2': data = prepare_msg(true); send_update(data); break;
-      case '3': send_sequence(0x11); Serial.println(0x11,BIN); break;
-      default: continue;
-    }
+  for (size_t i = 1; i < 11; i++) {
+    POD = i;
+    set_occupied(true);
+    send_update(prepare_msg(false));
+    delay(1000);
   }
+//  while (Serial.available()) {
+//    m = Serial.read();
+//    switch (m) {
+//      case 'a': POD = 1; break;
+//      case 's': POD = 2; break;
+//      case 'd': POD = 3; break;
+//      case 'f': POD = 4; break;
+//      case 'g': POD = 5; break;
+//      case 'h': POD = 6; break;
+//      case 'j': POD = 7; break;
+//      case 'k': POD = 8; break;
+//      case 'l': POD = 9; break;
+//      case ';': POD = 10; break;
+//      case 'z': set_occupied(true); break;
+//      case 'x': set_occupied(false); break;
+//      case 'c': set_ready(); break;
+//      case 'v': reset_ready(POD); break;
+//      case '1': data = prepare_msg(false); send_update(data); break;
+//      case '2': data = prepare_msg(true); send_update(data); break;
+//      case '3': send_sequence(0x11); Serial.println(0x11,BIN); break;
+//      default: continue;
+//    }
+//  }
 //  printPacket(xbee.getOutgoingPacketObject());
 //  Serial.println(data, BIN);
   delay(1000);
